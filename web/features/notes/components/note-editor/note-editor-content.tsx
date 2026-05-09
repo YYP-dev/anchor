@@ -18,6 +18,8 @@ interface NoteEditorContentProps {
   selectedTagIds: string[];
   isReadOnly: boolean;
   isTrashed?: boolean;
+  editorWrapperClassName?: string;
+  editorClassName?: string;
   titleInputRef?: RefObject<HTMLInputElement | null>;
   contentEditorRef?: RefObject<RichTextEditorHandle | null>;
   onEnsureNoteIdForAttachmentUpload?: () => Promise<string | null>;
@@ -37,6 +39,8 @@ export function NoteEditorContent({
   selectedTagIds,
   isReadOnly,
   isTrashed = false,
+  editorWrapperClassName,
+  editorClassName,
   titleInputRef,
   contentEditorRef,
   onEnsureNoteIdForAttachmentUpload,
@@ -94,14 +98,14 @@ export function NoteEditorContent({
         )}
 
         {/* Content */}
-        <div className="mt-2">
+        <div className={cn("mt-2", editorWrapperClassName)}>
           <RichTextEditor
             ref={contentEditorRef}
             value={content}
             onChange={onContentChange}
             placeholder="Start typing your thoughts..."
             readOnly={isReadOnly}
-            className={cn("w-full", "min-h-[calc(100vh-380px)]")}
+            className={cn("w-full", "min-h-[calc(100vh-380px)]", editorClassName)}
           />
         </div>
       </div>

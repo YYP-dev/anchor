@@ -55,6 +55,7 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/features/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getTags, updateTag, deleteTag, type Tag as TagType } from "@/features/tags";
+import { useNewNoteModalStore } from "@/features/notes";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface SidebarProps {
@@ -76,6 +77,7 @@ export function Sidebar({
   const { theme, setTheme } = useTheme();
   const { logout, user } = useAuth();
   const queryClient = useQueryClient();
+  const openNewNoteModal = useNewNoteModalStore((state) => state.open);
 
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -259,9 +261,12 @@ export function Sidebar({
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link
-                  href="/notes/new"
-                  onClick={handleNavClick}
+                <button
+                  type="button"
+                  onClick={() => {
+                    openNewNoteModal();
+                    handleNavClick();
+                  }}
                   className={cn(
                     "group flex items-center justify-center",
                     "w-12 h-12 mx-auto",
@@ -277,14 +282,17 @@ export function Sidebar({
                   )}
                 >
                   <Plus className="h-6 w-6 transition-transform duration-300 group-hover:rotate-180" strokeWidth={2} />
-                </Link>
+                </button>
               </TooltipTrigger>
               <TooltipContent side="right">New Note</TooltipContent>
             </Tooltip>
           ) : (
-            <Link
-              href="/notes/new"
-              onClick={handleNavClick}
+            <button
+              type="button"
+              onClick={() => {
+                openNewNoteModal();
+                handleNavClick();
+              }}
               className={cn(
                 "group relative flex items-center gap-3",
                 "w-full h-12 px-4",
@@ -301,7 +309,7 @@ export function Sidebar({
             >
               <Plus className="h-5 w-5 transition-transform duration-300 group-hover:rotate-180" strokeWidth={2} />
               <span>New Note</span>
-            </Link>
+            </button>
           )}
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Masonry from "react-masonry-css";
 import {
@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BulkDeleteDialog, BulkArchiveDialog, ViewSettings } from "@/features/notes";
+import { useNewNoteModalStore } from "@/features/notes";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -46,9 +47,9 @@ const masonryBreakpoints = {
 };
 
 export default function NotesPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const openNewNoteModal = useNewNoteModalStore((state) => state.open);
   const tagIdParam = searchParams.get("tagId");
   const [searchQuery, setSearchQuery] = useState("");
   const { notes: notesPrefs, setNotesPreference } = usePreferencesStore();
@@ -529,10 +530,7 @@ export default function NotesPage() {
                   </p>
                   <Button
                     onClick={() => {
-                      const url = tagIdParam
-                        ? `/notes/new?tagId=${tagIdParam}`
-                        : "/notes/new";
-                      router.push(url);
+                      openNewNoteModal(tagIdParam);
                     }}
                     size="lg"
                     className="gap-2"

@@ -183,6 +183,20 @@
   color: var(--foreground);
 }
 
+/* Modal-specific editor scroll behavior (only content field scrolls) */
+.new-note-modal-editor .anchor-quill,
+.new-note-modal-editor .anchor-quill .quill,
+.new-note-modal-editor .anchor-quill .ql-container.ql-snow {
+  height: 100%;
+  min-height: 0;
+}
+
+.new-note-modal-editor .anchor-quill .ql-editor {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .anchor-quill .ql-editor.ql-blank::before {
   left: 0;
   right: 0;

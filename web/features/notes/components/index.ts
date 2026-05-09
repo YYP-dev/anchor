@@ -18,3 +18,4 @@ export {
 export { ViewSettings } from "./view-settings";
 export { ShareDialog } from "./share-dialog";
 export { SharedNoteIndicator } from "./shared-note-indicator";
+export { NewNoteModal } from "./new-note-modal";

@@ -5,3 +5,4 @@ export * from "./constants";
 export * from "./backgrounds";
 export * from "./quill";
 export * from "./hooks";
+export * from "./new-note-modal-store";
