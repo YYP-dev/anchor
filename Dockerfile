@@ -1,7 +1,7 @@
 FROM node:24-alpine AS base
 
 # pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.33.0 --activate
 
 # Next.js on Alpine can need libc compatibility
 RUN apk add --no-cache libc6-compat
@@ -39,7 +39,7 @@ RUN if [ -d src/generated ]; then mkdir -p dist/src && cp -R src/generated dist/
 FROM base AS web_deps
 WORKDIR /app/web
 COPY web/package.json web/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile 
+RUN pnpm install --frozen-lockfile
 
 FROM base AS web_builder
 WORKDIR /app/web
