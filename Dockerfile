@@ -39,7 +39,7 @@ RUN if [ -d src/generated ]; then mkdir -p dist/src && cp -R src/generated dist/
 FROM base AS web_deps
 WORKDIR /app/web
 COPY web/package.json web/pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --allow-build=sharp,unrs-resolver
+RUN pnpm install --frozen-lockfile 
 
 FROM base AS web_builder
 WORKDIR /app/web
