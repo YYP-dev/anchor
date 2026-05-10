@@ -510,9 +510,9 @@ export function EditNoteModal() {
                           Enkripsi isi catatan
                         </Label>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          Jika diaktifkan, isi catatan dienkripsi dengan brankas Anda sebelum meninggalkan browser ini.
-                          Berbagi dan lampiran dinonaktifkan untuk catatan terenkripsi. Gunakan file kunci pemulihan
-                          jika Anda mengatur ulang kata sandi—tanpa itu, isi terenkripsi tidak dapat dipulihkan.
+                          Jika diaktifkan, isi catatan akan terenkripsi.
+                          Fitur berbagi dan lampiran dinonaktifkan untuk catatan terenkripsi.
+                          Gunakan file kunci pemulihan (recovery key) jika Anda mengatur ulang kata sandi yang terlupa. Tanpa itu, isi catatan terenkripsi tidak dapat dipulihkan.
                         </p>
                       </div>
                     </div>

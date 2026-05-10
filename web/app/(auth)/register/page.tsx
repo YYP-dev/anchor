@@ -209,10 +209,8 @@ export default function RegisterPage() {
                 <div className="rounded-lg border border-border/80 bg-muted/40 px-3 py-3 text-xs text-muted-foreground leading-relaxed space-y-2">
                   <p className="font-medium text-foreground text-sm">Enkripsi & kunci pemulihan</p>
                   <p>
-                    Anchor mengenkripsi catatan dengan rahasia yang tetap di browser Anda. Saat formulir ini dikirim,
-                    unduhan file kunci pemulihan dibuat otomatis. Simpan file tersebut di tempat yang aman dan
-                    offline—tanpa itu, mengatur ulang kata sandi yang terlupa tidak dapat membuka catatan terenkripsi
-                    yang sudah ada.
+                    Anchor menyediakan fitur enkripsi catatan. Saat anda mendaftar, browser akan otomatis mengunduh file kunci pemulihan (recovery key).
+                    Simpan file tersebut di tempat yang aman. Gunakan file tersebut saat mengatur ulang kata sandi yang terlupa agar dapat membuka catatan terenkripsi yang sudah ada.
                   </p>
                 </div>
 
