@@ -133,12 +133,12 @@ export function NewNoteModal() {
       let bodyContent = content || undefined;
       if (isEncrypted) {
         if (!user?.encryption) {
-          toast.error("Encrypted notes need a password account with encryption.");
+          toast.error("Catatan terenkripsi memerlukan akun kata sandi dengan enkripsi.");
           throw new Error("no vault");
         }
         const dek = await getDekFromSession();
         if (!dek) {
-          toast.error("Unlock encrypted notes with your password using the banner first.");
+          toast.error("Buka kunci catatan terenkripsi dengan kata sandi Anda lewat banner terlebih dahulu.");
           throw new Error("no dek");
         }
         bodyContent = await encryptNoteContentUtf8(content || "", dek);
@@ -220,7 +220,7 @@ export function NewNoteModal() {
       if (isEncrypted) {
         const dek = await getDekFromSession();
         if (!dek) {
-          toast.error("Unlock encrypted notes with your password using the banner first.");
+          toast.error("Buka kunci catatan terenkripsi dengan kata sandi Anda lewat banner terlebih dahulu.");
           return;
         }
         bodyContent = await encryptNoteContentUtf8(content || "", dek);
@@ -356,7 +356,7 @@ export function NewNoteModal() {
                     onCheckedChange={(v) => {
                       const on = v === true;
                       if (on && !user?.encryption) {
-                        toast.error("Encryption is only available for password sign-in accounts.");
+                        toast.error("Enkripsi hanya tersedia untuk akun yang masuk dengan kata sandi.");
                         return;
                       }
                       setIsEncrypted(on);
@@ -365,18 +365,18 @@ export function NewNoteModal() {
                   />
                   <div className="space-y-1 min-w-0">
                     <Label htmlFor="new-note-encrypt" className="text-sm font-medium cursor-pointer">
-                      Encrypt this note (optional)
+                      Enkripsi catatan ini (opsional)
                     </Label>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      Encrypted notes use your account password (this session) and the same recovery key file you
-                      downloaded at registration. Encrypted content is not searchable by body text, and sharing and
-                      attachments are disabled. Store your recovery file offline; without it, a password reset cannot
-                      unlock your encrypted notes.
+                      Catatan terenkripsi memakai kata sandi akun Anda (sesi ini) dan file kunci pemulihan yang sama
+                      yang Anda unduh saat pendaftaran. Isi terenkripsi tidak dapat dicari lewat teks isi, serta
+                      berbagi dan lampiran dinonaktifkan. Simpan file pemulihan Anda secara offline; tanpa itu,
+                      pengaturan ulang kata sandi tidak dapat membuka catatan terenkripsi Anda.
                     </p>
                     {!user?.encryption && (
                       <p className="text-xs text-amber-600 dark:text-amber-400">
-                        If this stays disabled after sign-up, refresh the page or sign out and back in so your session
-                        includes vault metadata.
+                        Jika ini tetap nonaktif setelah pendaftaran, muat ulang halaman atau keluar lalu masuk lagi agar
+                        sesi Anda menyertakan metadata brankas.
                       </p>
                     )}
                   </div>

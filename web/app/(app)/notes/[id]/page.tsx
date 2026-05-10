@@ -247,7 +247,7 @@ export default function NoteEditorPage() {
         const dek = await getDekFromSession();
         if (!dek) {
           toast.error(
-            "Unlock encrypted notes with your password using the banner first.",
+            "Buka kunci catatan terenkripsi dengan kata sandi Anda lewat banner terlebih dahulu.",
           );
           displayContent = "";
         } else {
@@ -257,7 +257,7 @@ export default function NoteEditorPage() {
               dek,
             );
           } catch {
-            toast.error("Could not decrypt this note.");
+            toast.error("Tidak dapat mendekripsi catatan ini.");
             displayContent = "";
           }
         }
@@ -334,12 +334,12 @@ export default function NoteEditorPage() {
         let bodyContent = content || undefined;
         if (isEncrypted) {
           if (!user?.encryption) {
-            toast.error("Encrypted notes need a password account with encryption.");
+            toast.error("Catatan terenkripsi memerlukan akun kata sandi dengan enkripsi.");
             throw new Error("no vault");
           }
           const dek = await getDekFromSession();
           if (!dek) {
-            toast.error("Unlock encrypted notes from the banner before saving.");
+            toast.error("Buka kunci catatan terenkripsi lewat banner sebelum menyimpan.");
             throw new Error("no dek");
           }
           bodyContent = await encryptNoteContentUtf8(content || "", dek);
@@ -590,12 +590,12 @@ export default function NoteEditorPage() {
         let bodyContent = content || undefined;
         if (isEncrypted) {
           if (!user?.encryption) {
-            toast.error("Your account does not have an encryption vault.");
+            toast.error("Akun Anda tidak memiliki brankas enkripsi.");
             return;
           }
           const dek = await getDekFromSession();
           if (!dek) {
-            toast.error("Unlock encrypted notes from the banner before saving.");
+            toast.error("Buka kunci catatan terenkripsi lewat banner sebelum menyimpan.");
             return;
           }
           bodyContent = await encryptNoteContentUtf8(content || "", dek);
@@ -719,7 +719,7 @@ export default function NoteEditorPage() {
         isTrashed={note?.state === "trashed"}
         hasShares={hasShares}
         shareAllowed={!(note?.isEncrypted ?? false)}
-        shareDisabledReason="Encrypted notes cannot be shared with collaborators."
+        shareDisabledReason="Catatan terenkripsi tidak dapat dibagikan ke kolaborator."
         onBack={handleBack}
         onTogglePin={togglePin}
         onBackgroundChange={setBackground}
@@ -775,13 +775,13 @@ export default function NoteEditorPage() {
                   const on = v === true;
                   if (on && !user?.encryption) {
                     toast.error(
-                      "Encryption is only available for password sign-in accounts.",
+                      "Enkripsi hanya tersedia untuk akun yang masuk dengan kata sandi.",
                     );
                     return;
                   }
                   if (on && !isNew && hasShares) {
                     toast.error(
-                      "Remove all collaborators before enabling encryption.",
+                      "Hapus semua kolaborator sebelum mengaktifkan enkripsi.",
                     );
                     return;
                   }
@@ -791,12 +791,12 @@ export default function NoteEditorPage() {
               />
               <div className="space-y-1 min-w-0">
                 <Label htmlFor="page-note-encrypt" className="text-sm font-medium cursor-pointer">
-                  {isNew ? "Encrypt this note (optional)" : "Encrypt note content"}
+                  {isNew ? "Enkripsi catatan ini (opsional)" : "Enkripsi isi catatan"}
                 </Label>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Encrypted notes use your vault in this browser; body text is not searchable server-side. Sharing and
-                  attachments are disabled. Keep your recovery key file—without it, a password reset cannot unlock
-                  encrypted notes.
+                  Catatan terenkripsi memakai brankas Anda di browser ini; teks isi tidak dapat dicari di sisi server.
+                  Berbagi dan lampiran dinonaktifkan. Simpan file kunci pemulihan Anda—tanpa itu, pengaturan ulang
+                  kata sandi tidak dapat membuka catatan terenkripsi.
                 </p>
               </div>
             </div>

@@ -53,7 +53,7 @@ export default function RegisterPage() {
         email,
         recoverySecret: vault.recoverySecretBase64,
         hint:
-          "Keep this file offline and secret. You need it when resetting your password so Anchor can re-wrap your encryption key.",
+          "Simpan file ini secara offline dan rahasia. Anda membutuhkannya saat mengatur ulang kata sandi agar Anchor dapat membungkus ulang kunci enkripsi Anda.",
         createdAt: new Date().toISOString(),
       };
       const blob = new Blob([JSON.stringify(recoveryFile, null, 2)], {
@@ -81,7 +81,7 @@ export default function RegisterPage() {
       const message =
         err instanceof Error
           ? err.message
-          : "Could not prepare encryption. Try again or use a different browser.";
+          : "Tidak dapat menyiapkan enkripsi. Coba lagi atau gunakan browser lain.";
       setError(message);
     } finally {
       setVaultBusy(false);
@@ -207,11 +207,12 @@ export default function RegisterPage() {
                   </div>
                 </div>
                 <div className="rounded-lg border border-border/80 bg-muted/40 px-3 py-3 text-xs text-muted-foreground leading-relaxed space-y-2">
-                  <p className="font-medium text-foreground text-sm">Encryption & recovery key</p>
+                  <p className="font-medium text-foreground text-sm">Enkripsi & kunci pemulihan</p>
                   <p>
-                    Anchor encrypts notes using secrets that stay in your browser. When you submit this form, we
-                    generate a recovery key file download automatically. Store it somewhere safe and offline—without
-                    it, resetting a forgotten password cannot unlock existing encrypted notes.
+                    Anchor mengenkripsi catatan dengan rahasia yang tetap di browser Anda. Saat formulir ini dikirim,
+                    unduhan file kunci pemulihan dibuat otomatis. Simpan file tersebut di tempat yang aman dan
+                    offline—tanpa itu, mengatur ulang kata sandi yang terlupa tidak dapat membuka catatan terenkripsi
+                    yang sudah ada.
                   </p>
                 </div>
 
@@ -242,7 +243,7 @@ export default function RegisterPage() {
                   {isRegisterPending || vaultBusy ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {vaultBusy ? "Preparing encryption…" : "Creating account..."}
+                      {vaultBusy ? "Menyiapkan enkripsi…" : "Creating account..."}
                     </>
                   ) : (
                     "Create Account"

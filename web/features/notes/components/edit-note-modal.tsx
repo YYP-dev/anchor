@@ -130,7 +130,7 @@ export function EditNoteModal() {
         const dek = await getDekFromSession();
         if (!dek) {
           toast.error(
-            "Unlock encrypted notes with your password using the banner first.",
+            "Buka kunci catatan terenkripsi dengan kata sandi Anda lewat banner terlebih dahulu.",
           );
           displayContent = "";
         } else {
@@ -140,7 +140,7 @@ export function EditNoteModal() {
               dek,
             );
           } catch {
-            toast.error("Could not decrypt this note.");
+            toast.error("Tidak dapat mendekripsi catatan ini.");
             displayContent = "";
           }
         }
@@ -314,12 +314,12 @@ export function EditNoteModal() {
       let bodyContent = content || undefined;
       if (isEncrypted) {
         if (!user?.encryption) {
-          toast.error("Your account does not have an encryption vault.");
+          toast.error("Akun Anda tidak memiliki brankas enkripsi.");
           return;
         }
         const dek = await getDekFromSession();
         if (!dek) {
-          toast.error("Unlock encrypted notes with your password using the banner first.");
+          toast.error("Buka kunci catatan terenkripsi dengan kata sandi Anda lewat banner terlebih dahulu.");
           return;
         }
         bodyContent = await encryptNoteContentUtf8(content || "", dek);
@@ -431,7 +431,7 @@ export function EditNoteModal() {
                 isTrashed={note.state === "trashed"}
                 hasShares={hasShares}
                 shareAllowed={!(note.isEncrypted ?? false)}
-                shareDisabledReason="Encrypted notes cannot be shared with collaborators."
+                shareDisabledReason="Catatan terenkripsi tidak dapat dibagikan ke kolaborator."
                 onBack={handleBack}
                 onTogglePin={togglePin}
                 onBackgroundChange={setBackground}
@@ -488,13 +488,13 @@ export function EditNoteModal() {
                           const on = v === true;
                           if (on && !user?.encryption) {
                             toast.error(
-                              "Encryption is only available for password sign-in accounts.",
+                              "Enkripsi hanya tersedia untuk akun yang masuk dengan kata sandi.",
                             );
                             return;
                           }
                           if (on && hasShares) {
                             toast.error(
-                              "Remove all collaborators before enabling encryption.",
+                              "Hapus semua kolaborator sebelum mengaktifkan enkripsi.",
                             );
                             return;
                           }
@@ -507,12 +507,12 @@ export function EditNoteModal() {
                           htmlFor="edit-note-encrypt"
                           className="text-sm font-medium cursor-pointer"
                         >
-                          Encrypt note content
+                          Enkripsi isi catatan
                         </Label>
                         <p className="text-xs text-muted-foreground leading-relaxed">
-                          When enabled, the note body is encrypted with your vault before it leaves this browser.
-                          Sharing and attachments are disabled for encrypted notes. Use your recovery key file if you
-                          reset your password—without it, encrypted content cannot be restored.
+                          Jika diaktifkan, isi catatan dienkripsi dengan brankas Anda sebelum meninggalkan browser ini.
+                          Berbagi dan lampiran dinonaktifkan untuk catatan terenkripsi. Gunakan file kunci pemulihan
+                          jika Anda mengatur ulang kata sandi—tanpa itu, isi terenkripsi tidak dapat dipulihkan.
                         </p>
                       </div>
                     </div>
