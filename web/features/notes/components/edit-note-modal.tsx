@@ -454,51 +454,6 @@ export function EditNoteModal() {
                 />
               )}
 
-              {isOwner && !isReadOnly && note.state === "active" && (
-                <div className="relative z-10 border-b border-border/40 bg-background/70 px-4 py-3 space-y-3">
-                  <div className="flex items-start gap-3">
-                    <Checkbox
-                      id="edit-note-encrypt"
-                      checked={isEncrypted}
-                      disabled={
-                        !user?.encryption ||
-                        (!isEncrypted && hasShares)
-                      }
-                      onCheckedChange={(v) => {
-                        const on = v === true;
-                        if (on && !user?.encryption) {
-                          toast.error(
-                            "Encryption is only available for password sign-in accounts.",
-                          );
-                          return;
-                        }
-                        if (on && hasShares) {
-                          toast.error(
-                            "Remove all collaborators before enabling encryption.",
-                          );
-                          return;
-                        }
-                        setIsEncrypted(on);
-                        setHasUnsavedChanges(true);
-                      }}
-                    />
-                    <div className="space-y-1">
-                      <Label
-                        htmlFor="edit-note-encrypt"
-                        className="text-sm font-medium cursor-pointer"
-                      >
-                        Encrypt note content
-                      </Label>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        When enabled, the note body is encrypted with your vault before it leaves this browser.
-                        Sharing and attachments are disabled for encrypted notes. Use your recovery key file if you
-                        reset your password—without it, encrypted content cannot be restored.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               <NoteEditorContent
                 noteId={note.id}
                 canUpload={canUpload}
@@ -518,6 +473,51 @@ export function EditNoteModal() {
                 onTitleChange={setTitle}
                 onContentChange={setContent}
                 onTagsChange={setSelectedTagIds}
+                belowAttachments={
+                  isOwner && !isReadOnly && note.state === "active" ? (
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        id="edit-note-encrypt"
+                        className="mt-0.5 border-border data-[disabled]:border-muted-foreground/50"
+                        checked={isEncrypted}
+                        disabled={
+                          !user?.encryption ||
+                          (!isEncrypted && hasShares)
+                        }
+                        onCheckedChange={(v) => {
+                          const on = v === true;
+                          if (on && !user?.encryption) {
+                            toast.error(
+                              "Encryption is only available for password sign-in accounts.",
+                            );
+                            return;
+                          }
+                          if (on && hasShares) {
+                            toast.error(
+                              "Remove all collaborators before enabling encryption.",
+                            );
+                            return;
+                          }
+                          setIsEncrypted(on);
+                          setHasUnsavedChanges(true);
+                        }}
+                      />
+                      <div className="space-y-1 min-w-0">
+                        <Label
+                          htmlFor="edit-note-encrypt"
+                          className="text-sm font-medium cursor-pointer"
+                        >
+                          Encrypt note content
+                        </Label>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          When enabled, the note body is encrypted with your vault before it leaves this browser.
+                          Sharing and attachments are disabled for encrypted notes. Use your recovery key file if you
+                          reset your password—without it, encrypted content cannot be restored.
+                        </p>
+                      </div>
+                    </div>
+                  ) : null
+                }
               />
 
               <ArchiveDialog

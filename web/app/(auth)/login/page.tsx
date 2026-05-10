@@ -41,11 +41,8 @@ export default function LoginPage() {
   const isLoading = oidcConfigLoading || isOidcCallbackProcessing || registrationModeLoading;
 
   return (
-    <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm overflow-hidden">
-      <div
-        className="transition-[max-height] duration-500 ease-out"
-        style={{ maxHeight: isLoading ? 240 : 700 }}
-      >
+    <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm overflow-visible">
+      <>
         {isLoading ? (
           <CardContent className="py-16">
             <div className="flex items-center justify-center py-8">
@@ -178,7 +175,7 @@ export default function LoginPage() {
             </CardContent>
           </div>
         )}
-      </div>
+      </>
     </Card>
   );
 }

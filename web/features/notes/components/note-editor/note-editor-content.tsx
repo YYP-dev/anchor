@@ -1,6 +1,6 @@
 "use client";
 
-import type { RefObject } from "react";
+import type { ReactNode, RefObject } from "react";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor, type RichTextEditorHandle } from "../editor";
 import { TagSelector } from "@/features/tags";
@@ -26,6 +26,8 @@ interface NoteEditorContentProps {
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
   onTagsChange: (tagIds: string[]) => void;
+  /** Rendered after tags + attachments, before the rich-text editor (e.g. encryption toggle). */
+  belowAttachments?: ReactNode;
 }
 
 export function NoteEditorContent({
@@ -47,6 +49,7 @@ export function NoteEditorContent({
   onTitleChange,
   onContentChange,
   onTagsChange,
+  belowAttachments,
 }: NoteEditorContentProps) {
   const showTags = !isReadOnly || selectedTagIds.length > 0;
   const showAttachments = canUpload || (attachmentCount ?? 0) > 0;
@@ -96,6 +99,10 @@ export function NoteEditorContent({
             />
           </div>
         )}
+
+        {belowAttachments != null ? (
+          <div className="py-3 border-b border-border/30">{belowAttachments}</div>
+        ) : null}
 
         {/* Content */}
         <div className={cn("mt-2", editorWrapperClassName)}>

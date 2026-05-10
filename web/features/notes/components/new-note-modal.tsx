@@ -329,36 +329,6 @@ export function NewNoteModal() {
               onPermanentDeleteClick={() => {}}
             />
 
-            <div className="relative z-10 border-b border-border/40 bg-background/70 px-4 py-3 space-y-3">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="new-note-encrypt"
-                  checked={isEncrypted}
-                  disabled={!user?.encryption}
-                  onCheckedChange={(v) => {
-                    const on = v === true;
-                    if (on && !user?.encryption) {
-                      toast.error("Encryption is only available for password sign-in accounts.");
-                      return;
-                    }
-                    setIsEncrypted(on);
-                    setHasUnsavedChanges(true);
-                  }}
-                />
-                <div className="space-y-1">
-                  <Label htmlFor="new-note-encrypt" className="text-sm font-medium cursor-pointer">
-                    Encrypt this note (optional)
-                  </Label>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Encrypted notes use your account password (this session) and the same recovery key file you
-                    downloaded at registration. Encrypted content is not searchable by body text, and sharing and
-                    attachments are disabled. Store your recovery file offline; without it, a password reset cannot
-                    unlock your encrypted notes.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             <NoteEditorContent
               noteId={persistedNoteId ?? undefined}
               canUpload={!isEncrypted}
@@ -376,6 +346,42 @@ export function NewNoteModal() {
               onTitleChange={setTitle}
               onContentChange={setContent}
               onTagsChange={setSelectedTagIds}
+              belowAttachments={
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="new-note-encrypt"
+                    className="mt-0.5 border-border data-[disabled]:border-muted-foreground/50"
+                    checked={isEncrypted}
+                    disabled={!user?.encryption}
+                    onCheckedChange={(v) => {
+                      const on = v === true;
+                      if (on && !user?.encryption) {
+                        toast.error("Encryption is only available for password sign-in accounts.");
+                        return;
+                      }
+                      setIsEncrypted(on);
+                      setHasUnsavedChanges(true);
+                    }}
+                  />
+                  <div className="space-y-1 min-w-0">
+                    <Label htmlFor="new-note-encrypt" className="text-sm font-medium cursor-pointer">
+                      Encrypt this note (optional)
+                    </Label>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Encrypted notes use your account password (this session) and the same recovery key file you
+                      downloaded at registration. Encrypted content is not searchable by body text, and sharing and
+                      attachments are disabled. Store your recovery file offline; without it, a password reset cannot
+                      unlock your encrypted notes.
+                    </p>
+                    {!user?.encryption && (
+                      <p className="text-xs text-amber-600 dark:text-amber-400">
+                        If this stays disabled after sign-up, refresh the page or sign out and back in so your session
+                        includes vault metadata.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              }
             />
           </div>
         </div>

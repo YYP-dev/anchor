@@ -89,11 +89,8 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm overflow-hidden">
-      <div
-        className="transition-[max-height] duration-500 ease-out"
-        style={{ maxHeight: modeLoading ? 240 : 700 }}
-      >
+    <Card className="border-0 shadow-xl bg-card/80 backdrop-blur-sm overflow-visible">
+      <>
         {modeLoading ? (
           <CardContent className="py-16">
             <div className="flex items-center justify-center py-8">
@@ -266,7 +263,7 @@ export default function RegisterPage() {
             </CardContent>
           </div>
         )}
-      </div>
+      </>
     </Card>
   );
 }

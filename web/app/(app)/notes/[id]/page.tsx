@@ -743,47 +743,6 @@ export default function NoteEditorPage() {
         />
       )}
 
-      {isOwner && !isReadOnly && (isNew || note?.state === "active") && (
-        <div className="relative z-10 border-b border-border/40 bg-background/70 px-4 py-3 lg:px-6 space-y-3">
-          <div className="flex items-start gap-3 max-w-4xl mx-auto">
-            <Checkbox
-              id="page-note-encrypt"
-              checked={isEncrypted}
-              disabled={
-                !user?.encryption || (!isNew && !isEncrypted && hasShares)
-              }
-              onCheckedChange={(v) => {
-                const on = v === true;
-                if (on && !user?.encryption) {
-                  toast.error(
-                    "Encryption is only available for password sign-in accounts.",
-                  );
-                  return;
-                }
-                if (on && !isNew && hasShares) {
-                  toast.error(
-                    "Remove all collaborators before enabling encryption.",
-                  );
-                  return;
-                }
-                setIsEncrypted(on);
-                setHasUnsavedChanges(true);
-              }}
-            />
-            <div className="space-y-1">
-              <Label htmlFor="page-note-encrypt" className="text-sm font-medium cursor-pointer">
-                {isNew ? "Encrypt this note (optional)" : "Encrypt note content"}
-              </Label>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Encrypted notes use your vault in this browser; body text is not searchable server-side. Sharing and
-                attachments are disabled. Keep your recovery key file—without it, a password reset cannot unlock
-                encrypted notes.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Content */}
       <NoteEditorContent
         noteId={!isNew ? noteId : undefined}
@@ -802,6 +761,47 @@ export default function NoteEditorPage() {
         onTitleChange={setTitle}
         onContentChange={setContent}
         onTagsChange={setSelectedTagIds}
+        belowAttachments={
+          isOwner && !isReadOnly && (isNew || note?.state === "active") ? (
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="page-note-encrypt"
+                className="mt-0.5 border-border data-[disabled]:border-muted-foreground/50"
+                checked={isEncrypted}
+                disabled={
+                  !user?.encryption || (!isNew && !isEncrypted && hasShares)
+                }
+                onCheckedChange={(v) => {
+                  const on = v === true;
+                  if (on && !user?.encryption) {
+                    toast.error(
+                      "Encryption is only available for password sign-in accounts.",
+                    );
+                    return;
+                  }
+                  if (on && !isNew && hasShares) {
+                    toast.error(
+                      "Remove all collaborators before enabling encryption.",
+                    );
+                    return;
+                  }
+                  setIsEncrypted(on);
+                  setHasUnsavedChanges(true);
+                }}
+              />
+              <div className="space-y-1 min-w-0">
+                <Label htmlFor="page-note-encrypt" className="text-sm font-medium cursor-pointer">
+                  {isNew ? "Encrypt this note (optional)" : "Encrypt note content"}
+                </Label>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Encrypted notes use your vault in this browser; body text is not searchable server-side. Sharing and
+                  attachments are disabled. Keep your recovery key file—without it, a password reset cannot unlock
+                  encrypted notes.
+                </p>
+              </div>
+            </div>
+          ) : null
+        }
       />
 
       {/* Dialogs */}
