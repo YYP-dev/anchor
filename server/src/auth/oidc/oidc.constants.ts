@@ -16,6 +16,10 @@ export const OIDC_USER_SELECT = {
   status: true,
   createdAt: true,
   updatedAt: true,
+  dekPasswordWrapped: true,
+  dekRecoveryWrapped: true,
+  passwordKdfSalt: true,
+  recoveryKdfSalt: true,
 } as const;
 
 // Content type to file extension mapping for profile images

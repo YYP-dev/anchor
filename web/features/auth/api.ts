@@ -5,6 +5,8 @@ import type {
   LoginCredentials,
   RegisterCredentials,
   ChangePasswordCredentials,
+  ChangePasswordResponse,
+  VerifyPasswordResetResponse,
   UpdateProfileDto,
   OidcConfig,
   OidcExchangeResponse,
@@ -27,8 +29,29 @@ export async function getRegistrationMode(): Promise<{ mode: "disabled" | "enabl
   return api.get("api/auth/registration-mode").json<{ mode: "disabled" | "enabled" | "review" }>();
 }
 
-export async function changePassword(credentials: ChangePasswordCredentials): Promise<{ message: string }> {
-  return api.post("api/auth/change-password", { json: credentials }).json<{ message: string }>();
+export async function changePassword(credentials: ChangePasswordCredentials): Promise<ChangePasswordResponse> {
+  return api.post("api/auth/change-password", { json: credentials }).json<ChangePasswordResponse>();
+}
+
+export async function forgotPassword(email: string): Promise<{ ok: boolean }> {
+  return api.post("api/auth/forgot-password", { json: { email } }).json<{ ok: boolean }>();
+}
+
+export async function verifyPasswordResetOtp(
+  email: string,
+  code: string,
+): Promise<VerifyPasswordResetResponse> {
+  return api
+    .post("api/auth/verify-password-reset-otp", { json: { email, code } })
+    .json<VerifyPasswordResetResponse>();
+}
+
+export async function completePasswordReset(body: {
+  resetToken: string;
+  newPassword: string;
+  newDekPasswordWrapped: string;
+}): Promise<AuthResponse> {
+  return api.post("api/auth/complete-password-reset", { json: body }).json<AuthResponse>();
 }
 
 export async function updateProfile(data: UpdateProfileDto): Promise<User> {

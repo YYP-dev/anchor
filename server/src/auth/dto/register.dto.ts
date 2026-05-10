@@ -1,6 +1,7 @@
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -20,4 +21,20 @@ export class RegisterDto {
   @Transform(({ value }) => value?.trim())
   @MaxLength(100)
   name: string;
+
+  @IsOptional()
+  @IsString()
+  dekPasswordWrapped?: string;
+
+  @IsOptional()
+  @IsString()
+  dekRecoveryWrapped?: string;
+
+  @IsOptional()
+  @IsString()
+  passwordKdfSalt?: string;
+
+  @IsOptional()
+  @IsString()
+  recoveryKdfSalt?: string;
 }

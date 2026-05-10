@@ -15,6 +15,7 @@ import { OidcConfigService } from './oidc/oidc-config.service';
 import { OidcClientService } from './oidc/oidc-client.service';
 import { OidcStateService } from './oidc/oidc-state.service';
 import { OidcUserService } from './oidc/oidc-user.service';
+import { EmailService } from './email.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { OidcUserService } from './oidc/oidc-user.service';
     OidcClientService,
     OidcStateService,
     OidcUserService,
+    EmailService,
   ],
   exports: [AuthService, OidcConfigService, JwtModule, TokenResolverService, AuthGuard],
 })

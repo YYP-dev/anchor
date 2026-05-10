@@ -38,6 +38,9 @@ interface NoteEditorHeaderProps {
   permission?: "owner" | "viewer" | "editor";
   isTrashed?: boolean;
   hasShares?: boolean;
+  /** Encrypted notes cannot be shared; button stays visible but disabled with a reason. */
+  shareAllowed?: boolean;
+  shareDisabledReason?: string;
   onBack: () => void;
   onTogglePin: () => void;
   onBackgroundChange: (background: string | null) => void;
@@ -63,6 +66,8 @@ export function NoteEditorHeader({
   permission = "owner",
   isTrashed = false,
   hasShares = false,
+  shareAllowed = true,
+  shareDisabledReason = "Sharing is not available for this note.",
   onBack,
   onTogglePin,
   onBackgroundChange,
@@ -181,20 +186,28 @@ export function NoteEditorHeader({
           {!isNew && isOwner && !isTrashed && onShareClick && (
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onShareClick}
-                  className={cn(
-                    "h-9 w-9 rounded-xl transition-colors",
-                    hasShares && "text-primary bg-primary/10"
-                  )}
-                >
-                  <UserPlus className="h-4 w-4" />
-                </Button>
+                <span className="inline-flex">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={shareAllowed ? onShareClick : undefined}
+                    disabled={!shareAllowed}
+                    className={cn(
+                      "h-9 w-9 rounded-xl transition-colors",
+                      hasShares && shareAllowed && "text-primary bg-primary/10",
+                      !shareAllowed && "opacity-40"
+                    )}
+                  >
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </span>
               </TooltipTrigger>
               <TooltipContent side="bottom">
-                {hasShares ? "Manage shares" : "Share note"}
+                {!shareAllowed
+                  ? shareDisabledReason
+                  : hasShares
+                    ? "Manage shares"
+                    : "Share note"}
               </TooltipContent>
             </Tooltip>
           )}

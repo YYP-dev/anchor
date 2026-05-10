@@ -22,9 +22,12 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { LogoutDto } from './dto/logout.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { VerifyPasswordResetOtpDto } from './dto/verify-password-reset-otp.dto';
+import { CompletePasswordResetDto } from './dto/complete-password-reset.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import type { User } from 'src/generated/prisma/client';
+import type { SessionUser } from './session-user';
 
 @Controller('api/auth')
 export class AuthController {
@@ -47,6 +50,24 @@ export class AuthController {
   }
 
   @HttpCode(HttpStatus.OK)
+  @Post('forgot-password')
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-password-reset-otp')
+  verifyPasswordResetOtp(@Body() dto: VerifyPasswordResetOtpDto) {
+    return this.authService.verifyPasswordResetOtp(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('complete-password-reset')
+  completePasswordReset(@Body() dto: CompletePasswordResetDto) {
+    return this.authService.completePasswordReset(dto);
+  }
+
+  @HttpCode(HttpStatus.OK)
   @Post('refresh')
   refresh(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.refreshTokens(refreshTokenDto.refresh_token);
@@ -60,26 +81,26 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getMe(@CurrentUser() user: User) {
+  getMe(@CurrentUser() user: SessionUser) {
     return user;
   }
 
   @UseGuards(JwtAuthGuard)
   @Get('api-token')
-  getApiToken(@CurrentUser() user: User) {
+  getApiToken(@CurrentUser() user: SessionUser) {
     return this.authService.getApiToken(user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete('api-token')
-  revokeApiToken(@CurrentUser() user: User) {
+  revokeApiToken(@CurrentUser() user: SessionUser) {
     return this.authService.revokeApiToken(user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('api-token/regenerate')
-  regenerateApiToken(@CurrentUser() user: User) {
+  regenerateApiToken(@CurrentUser() user: SessionUser) {
     return this.authService.regenerateApiToken(user.id);
   }
 
@@ -87,7 +108,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Post('change-password')
   changePassword(
-    @CurrentUser() user: User,
+    @CurrentUser() user: SessionUser,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(user.id, changePasswordDto);
@@ -96,7 +117,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Patch('profile')
   async updateProfile(
-    @CurrentUser() user: User,
+    @CurrentUser() user: SessionUser,
     @Body() updateProfileDto: UpdateProfileDto,
   ) {
     return this.authService.updateProfile(user.id, updateProfileDto);
@@ -106,7 +127,7 @@ export class AuthController {
   @Post('profile/image')
   @UseInterceptors(FileInterceptor('image'))
   async uploadProfileImage(
-    @CurrentUser() user: User,
+    @CurrentUser() user: SessionUser,
     @UploadedFile(
       new ParseFilePipe({
         fileIsRequired: true,
@@ -125,7 +146,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Delete('profile/image')
-  async removeProfileImage(@CurrentUser() user: User) {
+  async removeProfileImage(@CurrentUser() user: SessionUser) {
     return this.authService.removeProfileImage(user.id);
   }
 }

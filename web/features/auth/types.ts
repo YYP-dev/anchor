@@ -1,3 +1,10 @@
+export interface EncryptionPayload {
+  dekPasswordWrapped: string;
+  dekRecoveryWrapped: string;
+  passwordKdfSalt: string;
+  recoveryKdfSalt: string;
+}
+
 export interface User {
   id: string;
   email: string;
@@ -6,6 +13,7 @@ export interface User {
   isAdmin?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  encryption?: EncryptionPayload;
 }
 
 export interface AuthResponse {
@@ -33,11 +41,30 @@ export interface RegisterCredentials {
   email: string;
   password: string;
   name: string;
+  dekPasswordWrapped: string;
+  dekRecoveryWrapped: string;
+  passwordKdfSalt: string;
+  recoveryKdfSalt: string;
 }
 
 export interface ChangePasswordCredentials {
   currentPassword: string;
   newPassword: string;
+  passwordKdfSalt?: string;
+  dekPasswordWrapped?: string;
+}
+
+export interface ChangePasswordResponse {
+  message: string;
+  user?: User;
+}
+
+export interface VerifyPasswordResetResponse {
+  resetToken: string;
+  encryption: Pick<
+    EncryptionPayload,
+    "dekRecoveryWrapped" | "recoveryKdfSalt" | "passwordKdfSalt"
+  >;
 }
 
 export interface UpdateProfileDto {

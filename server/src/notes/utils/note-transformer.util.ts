@@ -14,6 +14,7 @@ export interface TransformedNote {
   id: string;
   title: string;
   content: string | null;
+  isEncrypted: boolean;
   isPinned: boolean;
   isArchived: boolean;
   background: string | null;
@@ -34,6 +35,7 @@ interface NoteWithIncludes {
   id: string;
   title: string;
   content: string | null;
+  isEncrypted: boolean;
   isPinned: boolean;
   isArchived: boolean;
   background: string | null;

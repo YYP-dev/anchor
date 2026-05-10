@@ -18,6 +18,8 @@ export interface OidcConfig {
   disableInternalAuth: boolean;
 }
 
+import type { EncryptionPayload } from '../utils/encryption-payload.util';
+
 export interface OidcUserPayload {
   id: string;
   email: string;
@@ -27,6 +29,7 @@ export interface OidcUserPayload {
   status: string;
   createdAt: Date;
   updatedAt: Date;
+  encryption?: EncryptionPayload;
 }
 
 export interface OidcAuthResult {

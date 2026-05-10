@@ -16,6 +16,12 @@ import type { CreateNoteDto, Note, UpdateNoteDto } from "@/features/notes";
 import type { RichTextEditorHandle } from "@/features/notes/components/editor";
 import { useAuth } from "@/features/auth";
 import { useNewNoteModalStore } from "@/features/notes/new-note-modal-store";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  encryptNoteContentUtf8,
+  getDekFromSession,
+} from "@/features/encryption";
 
 export function NewNoteModal() {
   const queryClient = useQueryClient();
@@ -27,6 +33,7 @@ export function NewNoteModal() {
   const [isPinned, setIsPinned] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [background, setBackground] = useState<string | null>(null);
+  const [isEncrypted, setIsEncrypted] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -38,6 +45,7 @@ export function NewNoteModal() {
     isPinned: boolean;
     tagIds: string[];
     background: string | null;
+    isEncrypted: boolean;
   } | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
   const contentEditorRef = useRef<RichTextEditorHandle | null>(null);
@@ -52,7 +60,9 @@ export function NewNoteModal() {
       isPinned: note.isPinned,
       tagIds,
       background: note.background ?? null,
+      isEncrypted: note.isEncrypted ?? false,
     };
+    setIsEncrypted(note.isEncrypted ?? false);
   }, []);
 
   const createMutation = useMutation({
@@ -60,6 +70,7 @@ export function NewNoteModal() {
     onSuccess: (newNote) => {
       createdNoteIdRef.current = newNote.id;
       setPersistedNoteId(newNote.id);
+      setIsEncrypted(newNote.isEncrypted ?? false);
       syncLastSavedFromNote(newNote);
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
@@ -74,6 +85,7 @@ export function NewNoteModal() {
     mutationFn: ({ id, ...data }: UpdateNoteDto & { id: string }) =>
       updateNote(id, data),
     onSuccess: (updatedNote) => {
+      setIsEncrypted(updatedNote.isEncrypted ?? false);
       syncLastSavedFromNote(updatedNote);
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["notes", updatedNote.id] });
@@ -92,6 +104,7 @@ export function NewNoteModal() {
     setContent("");
     setIsPinned(false);
     setBackground(null);
+    setIsEncrypted(false);
     setSelectedTagIds(tagId ? [tagId] : []);
     setHasUnsavedChanges(false);
     createdNoteIdRef.current = null;
@@ -116,20 +129,46 @@ export function NewNoteModal() {
       return pendingCreateNoteRef.current;
     }
 
-    const createPromise = createMutation.mutateAsync({
-      title: getTitleForSave(),
-      content: content || undefined,
-      isPinned,
-      background,
-      tagIds: selectedTagIds,
-    });
+    const run = async () => {
+      let bodyContent = content || undefined;
+      if (isEncrypted) {
+        if (!user?.encryption) {
+          toast.error("Encrypted notes need a password account with encryption.");
+          throw new Error("no vault");
+        }
+        const dek = await getDekFromSession();
+        if (!dek) {
+          toast.error("Unlock encrypted notes with your password using the banner first.");
+          throw new Error("no dek");
+        }
+        bodyContent = await encryptNoteContentUtf8(content || "", dek);
+      }
+      return createMutation.mutateAsync({
+        title: getTitleForSave(),
+        content: bodyContent,
+        isPinned,
+        background,
+        tagIds: selectedTagIds,
+        isEncrypted,
+      });
+    };
 
-    pendingCreateNoteRef.current = createPromise.finally(() => {
+    const createPromise = run().finally(() => {
       pendingCreateNoteRef.current = null;
     });
 
+    pendingCreateNoteRef.current = createPromise;
     return pendingCreateNoteRef.current;
-  }, [background, content, createMutation, getTitleForSave, isPinned, selectedTagIds]);
+  }, [
+    background,
+    content,
+    createMutation,
+    getTitleForSave,
+    isEncrypted,
+    isPinned,
+    selectedTagIds,
+    user?.encryption,
+  ]);
 
   const checkUnsavedChanges = useCallback(() => {
     if (!persistedNoteId) {
@@ -138,7 +177,8 @@ export function NewNoteModal() {
         !isStoredContentEmpty(content) ||
         isPinned ||
         selectedTagIds.length > 0 ||
-        background !== null
+        background !== null ||
+        isEncrypted
       );
     }
     if (!lastSavedRef.current) return true;
@@ -148,12 +188,14 @@ export function NewNoteModal() {
       content !== saved.content ||
       isPinned !== saved.isPinned ||
       background !== saved.background ||
+      isEncrypted !== saved.isEncrypted ||
       JSON.stringify([...selectedTagIds].sort()) !==
         JSON.stringify([...saved.tagIds].sort())
     );
   }, [
     background,
     content,
+    isEncrypted,
     isPinned,
     persistedNoteId,
     selectedTagIds,
@@ -173,20 +215,33 @@ export function NewNoteModal() {
 
     if (!checkUnsavedChanges()) return;
 
-    updateMutation.mutate({
-      id: noteId,
-      title: getTitleForSave(),
-      content: content || undefined,
-      isPinned,
-      background,
-      tagIds: selectedTagIds,
-    });
+    void (async () => {
+      let bodyContent = content || undefined;
+      if (isEncrypted) {
+        const dek = await getDekFromSession();
+        if (!dek) {
+          toast.error("Unlock encrypted notes with your password using the banner first.");
+          return;
+        }
+        bodyContent = await encryptNoteContentUtf8(content || "", dek);
+      }
+      updateMutation.mutate({
+        id: noteId,
+        title: getTitleForSave(),
+        content: bodyContent,
+        isPinned,
+        background,
+        tagIds: selectedTagIds,
+        isEncrypted,
+      });
+    })();
   }, [
     checkUnsavedChanges,
     content,
     createMutation.isPending,
     createNewNote,
     getTitleForSave,
+    isEncrypted,
     isPinned,
     background,
     selectedTagIds,
@@ -274,9 +329,39 @@ export function NewNoteModal() {
               onPermanentDeleteClick={() => {}}
             />
 
+            <div className="relative z-10 border-b border-border/40 bg-background/70 px-4 py-3 space-y-3">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="new-note-encrypt"
+                  checked={isEncrypted}
+                  disabled={!user?.encryption}
+                  onCheckedChange={(v) => {
+                    const on = v === true;
+                    if (on && !user?.encryption) {
+                      toast.error("Encryption is only available for password sign-in accounts.");
+                      return;
+                    }
+                    setIsEncrypted(on);
+                    setHasUnsavedChanges(true);
+                  }}
+                />
+                <div className="space-y-1">
+                  <Label htmlFor="new-note-encrypt" className="text-sm font-medium cursor-pointer">
+                    Encrypt this note (optional)
+                  </Label>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Encrypted notes use your account password (this session) and the same recovery key file you
+                    downloaded at registration. Encrypted content is not searchable by body text, and sharing and
+                    attachments are disabled. Store your recovery file offline; without it, a password reset cannot
+                    unlock your encrypted notes.
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <NoteEditorContent
               noteId={persistedNoteId ?? undefined}
-              canUpload
+              canUpload={!isEncrypted}
               isOwner
               currentUserId={user?.id ?? null}
               title={title}

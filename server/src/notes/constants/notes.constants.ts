@@ -91,4 +91,10 @@ export const ERROR_MESSAGES = {
   ONLY_OWNER_CAN_RESTORE: 'Only note owner can restore notes',
   ONLY_OWNER_CAN_PERMANENTLY_DELETE:
     'Only note owner can permanently delete notes',
+  ENCRYPTED_NOTE_CANNOT_SHARE:
+    'Encrypted notes cannot be shared with collaborators.',
+  ONLY_OWNER_CAN_EDIT_ENCRYPTED:
+    'Only the note owner can edit encrypted notes.',
+  ENCRYPTED_NOTE_NO_ATTACHMENTS:
+    'Attachments are not supported on encrypted notes.',
 } as const;

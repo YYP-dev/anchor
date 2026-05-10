@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateNoteDto } from '../dto/create-note.dto';
 import { UpdateNoteDto } from '../dto/update-note.dto';
@@ -24,6 +29,10 @@ export class NotesService {
 
   async create(userId: string, createNoteDto: CreateNoteDto) {
     const { tagIds, ...noteData } = createNoteDto;
+
+    if (createNoteDto.isEncrypted) {
+      await this.assertUserHasEncryptionVault(userId);
+    }
 
     const note = await this.prisma.note.create({
       data: {
@@ -84,10 +93,15 @@ export class NotesService {
                     title: { contains: search, mode: 'insensitive' as const },
                   },
                   {
-                    content: {
-                      contains: search,
-                      mode: 'insensitive' as const,
-                    },
+                    AND: [
+                      { isEncrypted: false },
+                      {
+                        content: {
+                          contains: search,
+                          mode: 'insensitive' as const,
+                        },
+                      },
+                    ],
                   },
                 ],
               },
@@ -136,11 +150,51 @@ export class NotesService {
 
   async update(userId: string, id: string, updateNoteDto: UpdateNoteDto) {
     // Check access - owner or editor permission required
-    await this.noteAccessService.ensureNoteAccess(
+    const access = await this.noteAccessService.ensureNoteAccess(
       userId,
       id,
       NoteSharePermission.editor,
     );
+
+    const existing = await this.prisma.note.findUnique({
+      where: { id },
+      select: { isEncrypted: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(ERROR_MESSAGES.NOTE_NOT_FOUND);
+    }
+
+    if (existing.isEncrypted && !access.isOwner) {
+      throw new ForbiddenException(
+        ERROR_MESSAGES.ONLY_OWNER_CAN_EDIT_ENCRYPTED,
+      );
+    }
+
+    if (
+      updateNoteDto.isEncrypted === true &&
+      !existing.isEncrypted &&
+      !access.isOwner
+    ) {
+      throw new ForbiddenException(
+        'Only the note owner can enable encryption.',
+      );
+    }
+
+    if (updateNoteDto.isEncrypted === true && !existing.isEncrypted) {
+      await this.assertUserHasEncryptionVault(userId);
+      await this.assertNoteHasNoActiveShares(id);
+    }
+
+    if (
+      updateNoteDto.isEncrypted === false &&
+      existing.isEncrypted &&
+      !access.isOwner
+    ) {
+      throw new ForbiddenException(
+        'Only the note owner can turn off encryption.',
+      );
+    }
 
     const { tagIds, ...noteData } = updateNoteDto;
 
@@ -370,11 +424,16 @@ export class NotesService {
       if (!existingNote) {
         // Note doesn't exist on server - create it (only if user is owner)
         // For shared notes, they should already exist on server
+        if (change.isEncrypted) {
+          await this.assertUserHasEncryptionVault(userId);
+        }
+
         await this.prisma.note.create({
           data: {
             id: change.id,
             title: change.title,
             content: change.content,
+            isEncrypted: change.isEncrypted ?? false,
             isPinned: change.isPinned ?? false,
             isArchived: change.isArchived ?? false,
             background: change.background,
@@ -401,6 +460,10 @@ export class NotesService {
           continue;
         }
 
+        if (existingNote.isEncrypted && !access.isOwner) {
+          continue;
+        }
+
         // Note exists and user has edit access - compare timestamps for conflict resolution
         const clientUpdatedAt = new Date(change.updatedAt);
         const serverUpdatedAt = existingNote.updatedAt;
@@ -408,7 +471,7 @@ export class NotesService {
         if (clientUpdatedAt > serverUpdatedAt) {
           // Client wins - update server
           // Only allow certain fields to be updated for shared notes (not state, isArchived)
-          const updateData: any = {
+          const updateData: Record<string, unknown> = {
             title: change.title,
             content: change.content,
             isPinned: change.isPinned,
@@ -420,6 +483,14 @@ export class NotesService {
             updateData.isArchived = change.isArchived;
             updateData.state =
               (change.state as NoteState) ?? existingNote.state;
+          }
+
+          if (access.isOwner && change.isEncrypted !== undefined) {
+            if (change.isEncrypted === true && !existingNote.isEncrypted) {
+              await this.assertUserHasEncryptionVault(userId);
+              await this.assertNoteHasNoActiveShares(change.id);
+            }
+            updateData.isEncrypted = change.isEncrypted;
           }
 
           // Update tags if provided (editors can update tags)
@@ -508,6 +579,29 @@ export class NotesService {
       conflicts,
       syncedAt: new Date().toISOString(),
     };
+  }
+
+  private async assertUserHasEncryptionVault(userId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { dekPasswordWrapped: true },
+    });
+    if (!user?.dekPasswordWrapped) {
+      throw new BadRequestException(
+        'Encrypted notes require an account that uses password sign-in with encryption enabled.',
+      );
+    }
+  }
+
+  private async assertNoteHasNoActiveShares(noteId: string): Promise<void> {
+    const shareCount = await this.prisma.noteShare.count({
+      where: { noteId, isDeleted: false },
+    });
+    if (shareCount > 0) {
+      throw new BadRequestException(
+        'Remove all collaborators before encrypting this note.',
+      );
+    }
   }
 }
 

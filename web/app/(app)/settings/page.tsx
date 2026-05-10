@@ -9,6 +9,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { changePassword, updateProfile, uploadProfileImage, removeProfileImage, getApiToken, regenerateApiToken, revokeApiToken } from "@/features/auth/api";
+import type { ChangePasswordCredentials } from "@/features/auth/types";
+import {
+  storeDekFromCryptoKey,
+  unlockVaultWithPassword,
+  wrapVaultForNewPassword,
+} from "@/features/encryption";
 import { useAuthStore } from "@/features/auth/store";
 import { usePreferencesStore } from "@/features/preferences";
 import { toast } from "sonner";
@@ -189,9 +195,38 @@ export default function SettingsPage() {
   };
 
   const changePasswordMutation = useMutation({
-    mutationFn: changePassword,
-    onSuccess: () => {
-      toast.success("Password changed successfully");
+    mutationFn: async (credentials: ChangePasswordCredentials) => {
+      const enc = user?.encryption;
+      if (enc) {
+        const dek = await unlockVaultWithPassword(credentials.currentPassword, enc);
+        const { passwordKdfSalt, dekPasswordWrapped } = await wrapVaultForNewPassword(
+          dek,
+          credentials.newPassword,
+        );
+        return changePassword({
+          ...credentials,
+          passwordKdfSalt,
+          dekPasswordWrapped,
+        });
+      }
+      return changePassword(credentials);
+    },
+    onSuccess: async (data, variables) => {
+      toast.success(data.message || "Password changed successfully");
+      if (data.user) {
+        setUser(data.user);
+        if (data.user.encryption) {
+          try {
+            const dek = await unlockVaultWithPassword(
+              variables.newPassword,
+              data.user.encryption,
+            );
+            await storeDekFromCryptoKey(dek);
+          } catch {
+            toast.error("Password updated but the encryption session could not be refreshed. Use the unlock banner.");
+          }
+        }
+      }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
@@ -605,6 +640,12 @@ export default function SettingsPage() {
           <CardTitle className="text-2xl">Change Password</CardTitle>
           <CardDescription>
             Update your password to keep your account secure
+            {user?.encryption ? (
+              <span className="mt-2 block text-xs text-muted-foreground leading-relaxed">
+                Your note encryption key is re-wrapped with the new password automatically. Keep your recovery key file
+                safe—without it, a future email-based password reset cannot restore access to encrypted notes.
+              </span>
+            ) : null}
           </CardDescription>
         </CardHeader>
         <CardContent>

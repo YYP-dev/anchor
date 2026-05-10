@@ -7,6 +7,11 @@ import { useAuthStore, hasAccessToken, getRefreshToken } from "../store";
 import { login as loginApi, register as registerApi, getMe, revokeRefreshToken } from "../api";
 import type { LoginCredentials, RegisterCredentials } from "../types";
 import { toast } from "sonner";
+import {
+  clearVaultSession,
+  storeDekFromCryptoKey,
+  unlockVaultWithPassword,
+} from "@/features/encryption";
 
 export function useAuth() {
   const router = useRouter();
@@ -52,8 +57,21 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginCredentials) => loginApi(credentials),
-    onSuccess: (data) => {
+    onSuccess: async (data, variables) => {
       if (data.access_token && data.refresh_token) {
+        if (data.user.encryption) {
+          try {
+            const dek = await unlockVaultWithPassword(
+              variables.password,
+              data.user.encryption,
+            );
+            await storeDekFromCryptoKey(dek);
+          } catch {
+            toast.message(
+              "Signed in, but the encryption vault did not unlock automatically. Use the banner to enter your password.",
+            );
+          }
+        }
         setAuth(data.user, data.access_token, data.refresh_token);
         toast.success("Welcome back!");
         router.push("/");
@@ -66,9 +84,21 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: (credentials: RegisterCredentials) => registerApi(credentials),
-    onSuccess: (data) => {
+    onSuccess: async (data, variables) => {
       if (data.access_token && data.refresh_token) {
-        // User is active, log them in
+        if (data.user.encryption) {
+          try {
+            const dek = await unlockVaultWithPassword(
+              variables.password,
+              data.user.encryption,
+            );
+            await storeDekFromCryptoKey(dek);
+          } catch {
+            toast.error(
+              "Account created, but encryption did not unlock. Sign out and sign in again, or use the unlock banner.",
+            );
+          }
+        }
         setAuth(data.user, data.access_token, data.refresh_token);
         toast.success("Account created successfully!");
         router.push("/");
@@ -89,6 +119,7 @@ export function useAuth() {
     } catch {
       // Ignore - ensure local logout always completes
     }
+    clearVaultSession();
     clearAuth();
     router.push("/login");
   }, [clearAuth, router]);

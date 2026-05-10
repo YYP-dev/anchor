@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth, getRegistrationMode } from "@/features/auth";
+import { createRegistrationVault } from "@/features/encryption";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
+  const [vaultBusy, setVaultBusy] = useState(false);
   const { register, isRegisterPending } = useAuth();
 
   const { data: registrationMode, isLoading: modeLoading } = useQuery({
@@ -24,7 +26,7 @@ export default function RegisterPage() {
     queryFn: getRegistrationMode,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
@@ -43,7 +45,43 @@ export default function RegisterPage() {
       return;
     }
 
-    register({ email, password, name: name.trim() });
+    setVaultBusy(true);
+    try {
+      const vault = await createRegistrationVault(password);
+      const recoveryFile = {
+        version: 1,
+        email,
+        recoverySecret: vault.recoverySecretBase64,
+        hint:
+          "Keep this file offline and secret. You need it when resetting your password so Anchor can re-wrap your encryption key.",
+        createdAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(recoveryFile, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `anchor-recovery-${email.replace(/[^a-z0-9]+/gi, "_")}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      register({
+        email,
+        password,
+        name: name.trim(),
+        dekPasswordWrapped: vault.dekPasswordWrapped,
+        dekRecoveryWrapped: vault.dekRecoveryWrapped,
+        passwordKdfSalt: vault.passwordKdfSalt,
+        recoveryKdfSalt: vault.recoveryKdfSalt,
+      });
+    } catch {
+      setError("Could not prepare encryption. Try again or use a different browser.");
+    } finally {
+      setVaultBusy(false);
+    }
   };
 
   return (
@@ -167,6 +205,15 @@ export default function RegisterPage() {
                     />
                   </div>
                 </div>
+                <div className="rounded-lg border border-border/80 bg-muted/40 px-3 py-3 text-xs text-muted-foreground leading-relaxed space-y-2">
+                  <p className="font-medium text-foreground text-sm">Encryption & recovery key</p>
+                  <p>
+                    Anchor encrypts notes using secrets that stay in your browser. When you submit this form, we
+                    generate a recovery key file download automatically. Store it somewhere safe and offline—without
+                    it, resetting a forgotten password cannot unlock existing encrypted notes.
+                  </p>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <div className="relative">
@@ -189,12 +236,12 @@ export default function RegisterPage() {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
-                  disabled={isRegisterPending}
+                  disabled={isRegisterPending || vaultBusy}
                 >
-                  {isRegisterPending ? (
+                  {isRegisterPending || vaultBusy ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating account...
+                      {vaultBusy ? "Preparing encryption…" : "Creating account..."}
                     </>
                   ) : (
                     "Create Account"

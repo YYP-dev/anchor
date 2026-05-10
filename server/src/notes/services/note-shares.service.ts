@@ -24,6 +24,14 @@ export class NoteSharesService {
 
     await this.noteAccessService.verifyNoteOwnership(ownerId, noteId);
 
+    const noteMeta = await this.prisma.note.findUnique({
+      where: { id: noteId },
+      select: { isEncrypted: true },
+    });
+    if (noteMeta?.isEncrypted) {
+      throw new BadRequestException(ERROR_MESSAGES.ENCRYPTED_NOTE_CANNOT_SHARE);
+    }
+
     if (sharedWithUserId === ownerId) {
       throw new BadRequestException(ERROR_MESSAGES.CANNOT_SHARE_WITH_SELF);
     }

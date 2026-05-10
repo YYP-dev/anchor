@@ -23,6 +23,10 @@ export class CreateNoteDto {
   @IsOptional()
   isArchived?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  isEncrypted?: boolean;
+
   @IsString()
   @IsOptional()
   background?: string;

@@ -17,6 +17,7 @@ import { OidcUserService } from './oidc-user.service';
 import { UserStatus } from '../../generated/prisma/enums';
 import type { OidcAuthResult, OidcUserClaims } from './oidc.types';
 import { getErrorMessage } from './oidc.utils';
+import { buildEncryptionPayload } from '../utils/encryption-payload.util';
 
 export type { OidcAuthResult } from './oidc.types';
 
@@ -126,6 +127,7 @@ export class OidcService {
           status: user.status,
           createdAt: user.createdAt,
           updatedAt: user.updatedAt,
+          encryption: buildEncryptionPayload(user),
         },
         redirectUrl:
           this.validateRedirectUrl(storedState.redirectUrl, '/') ?? '/',
@@ -217,6 +219,7 @@ export class OidcService {
         status: user.status,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
+        encryption: buildEncryptionPayload(user),
       },
       redirectUrl: '/',
     };

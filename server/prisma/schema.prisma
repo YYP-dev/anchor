@@ -39,6 +39,12 @@ model User {
   isAdmin              Boolean          @default(false)
   status               UserStatus       @default(active)
   oidcSubject          String?          @unique
+  /// AES-GCM wrapped DEK (PBKDF2 from account password)
+  dekPasswordWrapped   String?
+  /// AES-GCM wrapped DEK (PBKDF2 from recovery secret)
+  dekRecoveryWrapped   String?
+  passwordKdfSalt      String?
+  recoveryKdfSalt      String?
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
   notes                Note[]
@@ -60,7 +66,8 @@ model Settings {
 model Note {
   id          String      @id @default(uuid())
   title       String
-  content     String?  
+  content     String?
+  isEncrypted Boolean     @default(false)
   isPinned    Boolean     @default(false)
   isArchived  Boolean     @default(false)
   background  String?
@@ -116,6 +123,18 @@ model RefreshToken {
 
   @@index([userId])
   @@index([token])
+}
+
+model PasswordResetOtp {
+  id        String   @id @default(uuid())
+  email     String
+  codeHash  String
+  expiresAt DateTime
+  consumed  Boolean  @default(false)
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model NoteAttachment {

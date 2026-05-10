@@ -35,6 +35,8 @@ export interface Note {
   id: string;
   title: string;
   content?: string | null;
+  /** Server defaults false; may be absent on cached/session copies */
+  isEncrypted?: boolean;
   isPinned: boolean;
   isArchived: boolean;
   background?: string | null;
@@ -68,6 +70,7 @@ export interface CreateNoteDto {
   content?: string;
   isPinned?: boolean;
   isArchived?: boolean;
+  isEncrypted?: boolean;
   background?: string | null;
   tagIds?: string[];
 }
@@ -77,6 +80,7 @@ export interface UpdateNoteDto {
   content?: string;
   isPinned?: boolean;
   isArchived?: boolean;
+  isEncrypted?: boolean;
   background?: string | null;
   tagIds?: string[];
 }

@@ -10,6 +10,7 @@ import { NoteSharePermission, AttachmentType } from 'src/generated/prisma/enums'
 import {
   ATTACHMENT_MAX_FILE_SIZE,
   ATTACHMENT_ALLOWED_MIME_TYPES,
+  ERROR_MESSAGES,
 } from '../constants/notes.constants';
 import { toAttachmentResponse } from '../dto/attachment-response.dto';
 import * as crypto from 'crypto';
@@ -35,6 +36,14 @@ export class NoteAttachmentsService {
       NoteSharePermission.editor,
     );
     await this.noteAccessService.ensureNoteIsActive(noteId);
+
+    const noteMeta = await this.prisma.note.findUnique({
+      where: { id: noteId },
+      select: { isEncrypted: true },
+    });
+    if (noteMeta?.isEncrypted) {
+      throw new BadRequestException(ERROR_MESSAGES.ENCRYPTED_NOTE_NO_ATTACHMENTS);
+    }
 
     if (!file) {
       throw new BadRequestException('No file provided');
