@@ -8,10 +8,16 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    # Reach Postgres on the host VM from inside the container (not embedded PG).
+    # Linux: host-gateway is required so host.docker.internal resolves.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      - PG_USER=anchor
-      - PG_PASSWORD=password
-      - PG_DATABASE=anchor
+      PG_HOST: host.docker.internal
+      PG_PORT: ${PG_PORT:-5432}
+      PG_USER: ${PG_USER:-anchor}
+      PG_PASSWORD: ${PG_PASSWORD:-password}
+      PG_DATABASE: ${PG_DATABASE:-anchor}
     volumes:
       - anchor_data:/data
 
