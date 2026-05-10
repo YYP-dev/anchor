@@ -10,6 +10,8 @@ import {
   NoteBackground,
   NoteEditorContent,
   NoteEditorHeader,
+  addCreatedNoteToListCaches,
+  removeNoteFromListCaches,
   updateNote,
 } from "@/features/notes";
 import type { CreateNoteDto, Note, UpdateNoteDto } from "@/features/notes";
@@ -67,13 +69,16 @@ export function NewNoteModal() {
 
   const createMutation = useMutation({
     mutationFn: (data: CreateNoteDto) => createNote(data),
-    onSuccess: (newNote) => {
+    onSuccess: async (newNote) => {
       createdNoteIdRef.current = newNote.id;
       setPersistedNoteId(newNote.id);
       setIsEncrypted(newNote.isEncrypted ?? false);
       syncLastSavedFromNote(newNote);
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      addCreatedNoteToListCaches(queryClient, newNote);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       toast.success("Note created");
     },
     onError: () => {
@@ -84,12 +89,20 @@ export function NewNoteModal() {
   const updateMutation = useMutation({
     mutationFn: ({ id, ...data }: UpdateNoteDto & { id: string }) =>
       updateNote(id, data),
-    onSuccess: (updatedNote) => {
+    onSuccess: async (updatedNote) => {
       setIsEncrypted(updatedNote.isEncrypted ?? false);
       syncLastSavedFromNote(updatedNote);
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["notes", updatedNote.id] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      if (updatedNote.state !== "active" || updatedNote.isArchived) {
+        removeNoteFromListCaches(queryClient, updatedNote.id);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({
+          queryKey: ["notes", updatedNote.id],
+          refetchType: "all",
+        }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       setHasUnsavedChanges(false);
     },
     onError: () => {

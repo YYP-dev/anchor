@@ -23,6 +23,8 @@ import {
   NoteEditorHeader,
   NoteEditorContent,
   ShareDialog,
+  addCreatedNoteToListCaches,
+  removeNoteFromListCaches,
 } from "@/features/notes";
 import type { CreateNoteDto, UpdateNoteDto, Note } from "@/features/notes";
 import type { RichTextEditorHandle } from "@/features/notes/components/editor";
@@ -297,12 +299,15 @@ export default function NoteEditorPage() {
   // Create note mutation
   const createMutation = useMutation({
     mutationFn: (data: CreateNoteDto) => createNote(data),
-    onSuccess: (newNote) => {
+    onSuccess: async (newNote) => {
       // Pre-populate the cache with the new note data before navigation
       // This prevents the loading state when the component remounts with the new URL
       queryClient.setQueryData(["notes", newNote.id], newNote);
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      addCreatedNoteToListCaches(queryClient, newNote);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       if (typeof window !== "undefined" && pendingFocusRestoreRef.current) {
         sessionStorage.setItem(
           getFocusRestoreStorageKey(newNote.id),
@@ -377,10 +382,15 @@ export default function NoteEditorPage() {
   // Update note mutation
   const updateMutation = useMutation({
     mutationFn: (data: UpdateNoteDto) => updateNote(noteId, data),
-    onSuccess: (updatedNote) => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["notes", noteId] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    onSuccess: async (updatedNote) => {
+      if (updatedNote.state !== "active" || updatedNote.isArchived) {
+        removeNoteFromListCaches(queryClient, updatedNote.id);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["notes", noteId], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       setHasUnsavedChanges(false);
       setIsEncrypted(updatedNote.isEncrypted ?? false);
       lastSavedRef.current = {
@@ -400,9 +410,12 @@ export default function NoteEditorPage() {
   // Delete note mutation
   const deleteMutation = useMutation({
     mutationFn: () => deleteNote(noteId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    onSuccess: async () => {
+      removeNoteFromListCaches(queryClient, noteId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       toast.success("Note moved to trash");
       router.back();
     },

@@ -29,6 +29,7 @@ import {
   ShareDialog,
   unarchiveNote,
   updateNote,
+  removeNoteFromListCaches,
 } from "@/features/notes";
 import type { Note, UpdateNoteDto } from "@/features/notes";
 import type { RichTextEditorHandle } from "@/features/notes/components/editor";
@@ -205,7 +206,7 @@ export function EditNoteModal() {
 
   const updateMutation = useMutation({
     mutationFn: (data: UpdateNoteDto) => updateNote(noteId!, data),
-    onSuccess: (updatedNote) => {
+    onSuccess: async (updatedNote) => {
       setIsEncrypted(updatedNote.isEncrypted ?? false);
       syncEditorSavedSnapshot(lastSavedRef, {
         title: updatedNote.title,
@@ -215,9 +216,14 @@ export function EditNoteModal() {
         background: updatedNote.background ?? null,
         isEncrypted: updatedNote.isEncrypted ?? false,
       });
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["notes", noteId] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      if (updatedNote.state !== "active" || updatedNote.isArchived) {
+        removeNoteFromListCaches(queryClient, updatedNote.id);
+      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["notes", noteId], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       setHasUnsavedChanges(false);
     },
     onError: () => {
@@ -227,9 +233,12 @@ export function EditNoteModal() {
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteNote(noteId!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notes"] });
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    onSuccess: async () => {
+      removeNoteFromListCaches(queryClient, noteId!);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["notes"], refetchType: "all" }),
+        queryClient.invalidateQueries({ queryKey: ["tags"], refetchType: "all" }),
+      ]);
       toast.success("Note moved to trash");
       close();
     },
