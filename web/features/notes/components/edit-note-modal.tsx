@@ -19,6 +19,7 @@ import {
   NoteBackground,
   ArchiveDialog,
   DeleteDialog,
+  RestoreDialog,
   PermanentDeleteDialog,
   ReadOnlyBanner,
   NoteEditorContent,
