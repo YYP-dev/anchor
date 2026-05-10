@@ -14,7 +14,7 @@ services:
       - traefik.enable=true
       - traefik.docker.network=anchor_web
       # Pick a hostname that appears on your TLS certificate (mkcert).
-      - traefik.http.routers.anchor.rule=Host(`anchor.local`)
+      - traefik.http.routers.anchor.rule=Host(`anchor.local`) || Host(`10.10.0.76`) || Host(`localhost`)
       - traefik.http.routers.anchor.entrypoints=websecure
       - traefik.http.routers.anchor.tls=true
       - traefik.http.services.anchor.loadbalancer.server.port=3000
