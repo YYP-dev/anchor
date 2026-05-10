@@ -22,7 +22,7 @@ jobs:
   docker:
     uses: ./.github/workflows/docker-build.yml
     with:
-      push: false
+      push: true
       tags: |
         type=ref,event=branch
         type=ref,event=pr
