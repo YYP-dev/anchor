@@ -1,0 +1,55 @@
+# Usage (from repo root):
+#   mkdir -p examples/traefik/certs
+#   Place mkcert PEM files as certs/cert.pem and certs/key.pem (see README.md)
+#   docker compose -f docker-compose.yml -f examples/traefik/docker-compose.override.yml up -d
+#
+# Override removes host port 3000 from anchor and adds Traefik on 80/443.
+
+services:
+  anchor:
+    ports: []
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=anchor_web
+      # Pick a hostname that appears on your TLS certificate (mkcert).
+      - traefik.http.routers.anchor.rule=Host(`anchor.local`)
+      - traefik.http.routers.anchor.entrypoints=websecure
+      - traefik.http.routers.anchor.tls=true
+      - traefik.http.services.anchor.loadbalancer.server.port=3000
+
+  traefik:
+    image: traefik:v3.3
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Paths are relative to this file’s folder (examples/traefik/)
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/certs:ro
+    command:
+      - --api.dashboard=false
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=anchor_web
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+    networks:
+      - web
+
+networks:
+  web:
+    name: anchor_web

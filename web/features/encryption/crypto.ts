@@ -1,5 +1,29 @@
 const PBKDF2_ITERATIONS = 210_000;
 
+/**
+ * Web Crypto (SubtleCrypto) only works in a [secure context](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts):
+ * HTTPS, `http://localhost`, `http://127.0.0.1`, etc. Plain `http://` to a LAN IP or hostname is **not** secure, so
+ * `crypto.subtle` is missing and registration encryption cannot run.
+ */
+export function assertBrowserCryptoAvailable(): void {
+  if (typeof window === "undefined") {
+    throw new Error("Encryption must run in the browser.");
+  }
+  if (!window.isSecureContext) {
+    throw new Error(
+      "Encryption needs a secure context. Use https:// to access this app, or open it at http://localhost or http://127.0.0.1 — not http:// plus a LAN IP or machine name.",
+    );
+  }
+  if (!globalThis.crypto?.getRandomValues) {
+    throw new Error("This browser does not support cryptographic random values.");
+  }
+  if (!globalThis.crypto.subtle) {
+    throw new Error(
+      "Web Crypto is unavailable (common when the page is not served over HTTPS or localhost). Use HTTPS or http://localhost.",
+    );
+  }
+}
+
 /** Copy bytes so Web Crypto sees a concrete ArrayBuffer (strict TS DOM libs). */
 function bufferSource(u: Uint8Array): BufferSource {
   return u.slice();
@@ -176,6 +200,7 @@ export async function createRegistrationVault(password: string): Promise<{
   dekRecoveryWrapped: string;
   recoverySecretBase64: string;
 }> {
+  assertBrowserCryptoAvailable();
   const passwordKdfSalt = randomSaltBase64();
   const recoveryKdfSalt = randomSaltBase64();
   const recoverySecretBase64 = randomRecoverySecretBase64();

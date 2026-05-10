@@ -77,8 +77,12 @@ export default function RegisterPage() {
         passwordKdfSalt: vault.passwordKdfSalt,
         recoveryKdfSalt: vault.recoveryKdfSalt,
       });
-    } catch {
-      setError("Could not prepare encryption. Try again or use a different browser.");
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Could not prepare encryption. Try again or use a different browser.";
+      setError(message);
     } finally {
       setVaultBusy(false);
     }

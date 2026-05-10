@@ -11,3 +11,7 @@ thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Local TLS material (mkcert); never commit keys
+examples/traefik/certs/*
+!examples/traefik/certs/.gitkeep

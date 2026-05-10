@@ -1,0 +1,7 @@
+# Loads mkcert (or other) PEM files into Traefik's default TLS store.
+# Paths are inside the Traefik container (/certs mounted from examples/traefik/certs).
+
+tls:
+  certificates:
+    - certFile: /certs/cert.pem
+      keyFile: /certs/key.pem
