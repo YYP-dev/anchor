@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { Pin, Paperclip } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import type { Note } from "@/features/notes";
 import { QuillPreview } from "@/features/notes";
+import { useEditNoteModalStore } from "@/features/notes/edit-note-modal-store";
 import { NoteBackground } from "./backgrounds";
 import { SharedNoteIndicator } from "./shared-note-indicator";
 import { NoteCardImages, ListImageThumbnail } from "./note-card-images";
@@ -38,9 +38,9 @@ export function NoteCard({
   footerRight,
   onClick: onClickProp,
 }: NoteCardProps) {
-  const router = useRouter();
+  const openEditNoteModal = useEditNoteModalStore((s) => s.open);
 
-  // Handle note click - store note in sessionStorage and navigate
+  // Handle note click - open editor modal (same UI as create note modal)
   const handleNoteClick = (e: React.MouseEvent) => {
     const ctrlOrCmd = e.ctrlKey || e.metaKey;
     const shift = e.shiftKey;
@@ -58,9 +58,7 @@ export function NoteCard({
     }
 
     e.preventDefault();
-    // Store note in sessionStorage for the editor page to use
-    sessionStorage.setItem(`note-${note.id}`, JSON.stringify(note));
-    router.push(`/notes/${note.id}`);
+    openEditNoteModal(note.id, note);
   };
 
   // Handle checkbox change

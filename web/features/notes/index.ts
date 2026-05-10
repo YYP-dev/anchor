@@ -6,3 +6,4 @@ export * from "./backgrounds";
 export * from "./quill";
 export * from "./hooks";
 export * from "./new-note-modal-store";
+export * from "./edit-note-modal-store";

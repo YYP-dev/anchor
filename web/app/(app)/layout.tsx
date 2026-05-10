@@ -3,7 +3,7 @@
 import { type ReactNode } from "react";
 import { Sidebar } from "@/components/layout";
 import { AuthGuard } from "@/features/auth";
-import { NewNoteModal } from "@/features/notes";
+import { EditNoteModal, NewNoteModal } from "@/features/notes";
 import { cn } from "@/lib/utils";
 import { usePreferencesStore } from "@/features/preferences";
 
@@ -36,6 +36,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
         <NewNoteModal />
+        <EditNoteModal />
       </div>
     </AuthGuard>
   );

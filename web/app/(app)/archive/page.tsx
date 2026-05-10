@@ -9,6 +9,7 @@ import {
   ArchiveDialog,
   NoteCard,
 } from "@/features/notes";
+import { useEditNoteModalStore } from "@/features/notes/edit-note-modal-store";
 import type { Note } from "@/features/notes";
 import { getTags } from "@/features/tags";
 import { Header } from "@/components/layout";
@@ -18,7 +19,6 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 import * as React from "react";
-import { useRouter } from "next/navigation";
 import Masonry from "react-masonry-css";
 import {
   Tooltip,
@@ -39,7 +39,7 @@ const masonryBreakpoints = {
 export default function ArchivePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const openEditNoteModal = useEditNoteModalStore((s) => s.open);
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ["notes", "archive"],
@@ -86,11 +86,7 @@ export default function ArchivePage() {
   });
 
   const handleNoteClick = (note: Note) => {
-    // Store note in sessionStorage for quick access
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(`note-${note.id}`, JSON.stringify(note));
-    }
-    router.push(`/notes/${note.id}`);
+    openEditNoteModal(note.id, note);
   };
 
   return (

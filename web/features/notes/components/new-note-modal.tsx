@@ -10,8 +10,9 @@ import {
   NoteBackground,
   NoteEditorContent,
   NoteEditorHeader,
+  updateNote,
 } from "@/features/notes";
-import type { CreateNoteDto, Note } from "@/features/notes";
+import type { CreateNoteDto, Note, UpdateNoteDto } from "@/features/notes";
 import type { RichTextEditorHandle } from "@/features/notes/components/editor";
 import { useAuth } from "@/features/auth";
 import { useNewNoteModalStore } from "@/features/notes/new-note-modal-store";
@@ -31,19 +32,56 @@ export function NewNoteModal() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const pendingCreateNoteRef = useRef<Promise<Note> | null>(null);
   const createdNoteIdRef = useRef<string | null>(null);
+  const lastSavedRef = useRef<{
+    title: string;
+    content: string;
+    isPinned: boolean;
+    tagIds: string[];
+    background: string | null;
+  } | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
   const contentEditorRef = useRef<RichTextEditorHandle | null>(null);
+
+  const [persistedNoteId, setPersistedNoteId] = useState<string | null>(null);
+
+  const syncLastSavedFromNote = useCallback((note: Note) => {
+    const tagIds = note.tagIds || note.tags?.map((t) => t.id) || [];
+    lastSavedRef.current = {
+      title: note.title,
+      content: note.content || "",
+      isPinned: note.isPinned,
+      tagIds,
+      background: note.background ?? null,
+    };
+  }, []);
 
   const createMutation = useMutation({
     mutationFn: (data: CreateNoteDto) => createNote(data),
     onSuccess: (newNote) => {
       createdNoteIdRef.current = newNote.id;
+      setPersistedNoteId(newNote.id);
+      syncLastSavedFromNote(newNote);
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       toast.success("Note created");
     },
     onError: () => {
       toast.error("Failed to create note");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...data }: UpdateNoteDto & { id: string }) =>
+      updateNote(id, data),
+    onSuccess: (updatedNote) => {
+      syncLastSavedFromNote(updatedNote);
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+      queryClient.invalidateQueries({ queryKey: ["notes", updatedNote.id] });
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+      setHasUnsavedChanges(false);
+    },
+    onError: () => {
+      toast.error("Failed to save note");
     },
   });
 
@@ -57,6 +95,8 @@ export function NewNoteModal() {
     setSelectedTagIds(tagId ? [tagId] : []);
     setHasUnsavedChanges(false);
     createdNoteIdRef.current = null;
+    lastSavedRef.current = null;
+    setPersistedNoteId(null);
   }, [isOpen, tagId]);
 
   useEffect(() => {
@@ -91,17 +131,73 @@ export function NewNoteModal() {
     return pendingCreateNoteRef.current;
   }, [background, content, createMutation, getTitleForSave, isPinned, selectedTagIds]);
 
+  const checkUnsavedChanges = useCallback(() => {
+    if (!persistedNoteId) {
+      return (
+        title.trim() !== "" ||
+        !isStoredContentEmpty(content) ||
+        isPinned ||
+        selectedTagIds.length > 0 ||
+        background !== null
+      );
+    }
+    if (!lastSavedRef.current) return true;
+    const saved = lastSavedRef.current;
+    return (
+      title !== saved.title ||
+      content !== saved.content ||
+      isPinned !== saved.isPinned ||
+      background !== saved.background ||
+      JSON.stringify([...selectedTagIds].sort()) !==
+        JSON.stringify([...saved.tagIds].sort())
+    );
+  }, [
+    background,
+    content,
+    isPinned,
+    persistedNoteId,
+    selectedTagIds,
+    title,
+  ]);
+
   const save = useCallback(() => {
-    if (createMutation.isPending) return;
-    if (createdNoteIdRef.current) return;
-    if (!title.trim() && isStoredContentEmpty(content)) return;
-    void createNewNote();
-  }, [content, createMutation.isPending, createNewNote, title]);
+    if (createMutation.isPending || updateMutation.isPending) return;
+
+    const noteId = createdNoteIdRef.current;
+
+    if (!noteId) {
+      if (!title.trim() && isStoredContentEmpty(content)) return;
+      void createNewNote();
+      return;
+    }
+
+    if (!checkUnsavedChanges()) return;
+
+    updateMutation.mutate({
+      id: noteId,
+      title: getTitleForSave(),
+      content: content || undefined,
+      isPinned,
+      background,
+      tagIds: selectedTagIds,
+    });
+  }, [
+    checkUnsavedChanges,
+    content,
+    createMutation.isPending,
+    createNewNote,
+    getTitleForSave,
+    isPinned,
+    background,
+    selectedTagIds,
+    title,
+    updateMutation,
+  ]);
 
   useEffect(() => {
     if (!isOpen) return;
-    setHasUnsavedChanges(title.trim() !== "" || !isStoredContentEmpty(content));
-  }, [content, isOpen, title]);
+    setHasUnsavedChanges(checkUnsavedChanges());
+  }, [checkUnsavedChanges, isOpen]);
 
   useEffect(() => {
     if (!isOpen || !hasUnsavedChanges) return;
@@ -131,7 +227,7 @@ export function NewNoteModal() {
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
-      if (hasUnsavedChanges && !createdNoteIdRef.current) {
+      if (hasUnsavedChanges) {
         save();
       }
       close();
@@ -146,8 +242,9 @@ export function NewNoteModal() {
     return newNote?.id ?? null;
   }, [createNewNote]);
 
-  const isSaving = createMutation.isPending;
-  const isSaved = !hasUnsavedChanges && !isSaving && !!createdNoteIdRef.current;
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const isSaved =
+    !hasUnsavedChanges && !isSaving && !!createdNoteIdRef.current;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -178,7 +275,7 @@ export function NewNoteModal() {
             />
 
             <NoteEditorContent
-              noteId={createdNoteIdRef.current ?? undefined}
+              noteId={persistedNoteId ?? undefined}
               canUpload
               isOwner
               currentUserId={user?.id ?? null}

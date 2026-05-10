@@ -11,12 +11,12 @@ import {
   PermanentDeleteDialog,
   NoteCard,
 } from "@/features/notes";
+import { useEditNoteModalStore } from "@/features/notes/edit-note-modal-store";
 import type { Note } from "@/features/notes";
 import { getTags } from "@/features/tags";
 import { Header } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { useMemo } from "react";
-import { useRouter } from "next/navigation";
 import Masonry from "react-masonry-css";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ const masonryBreakpoints = {
 export default function TrashPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const queryClient = useQueryClient();
-  const router = useRouter();
+  const openEditNoteModal = useEditNoteModalStore((s) => s.open);
 
   const { data: notes = [], isLoading } = useQuery({
     queryKey: ["notes", "trash"],
@@ -100,11 +100,7 @@ export default function TrashPage() {
   });
 
   const handleNoteClick = (note: Note) => {
-    // Store note in sessionStorage for quick access
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(`note-${note.id}`, JSON.stringify(note));
-    }
-    router.push(`/notes/${note.id}`);
+    openEditNoteModal(note.id, note);
   };
 
   return (
